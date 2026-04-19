@@ -18,7 +18,7 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const [trendsToShow, setTrendsToShow] = useState(3);
+  const [trendsToShow, setTrendsToShow] = useState(12);
   const [shouldScroll, setShouldScroll] = useState(false);
   const scrollTargetRef = useRef<HTMLDivElement>(null);
 
