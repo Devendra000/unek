@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Navbar } from '@/components/navbar';
 import { TrendGrid } from '@/components/trend-grid';
 import Link from 'next/link';
@@ -18,27 +18,33 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const categoryTrends = useMemo(() => {
-    const trends: { [key: string]: typeof mockTrends } = {};
-    
-    CATEGORIES.forEach((category) => {
-      const categoryId = category.name.toLowerCase();
-      trends[categoryId] = mockTrends
-        .filter((trend) => {
-          if (categoryId === 'global') {
-            return true;
-          }
-          if (categoryId === 'memeable') {
-            return trend.memeability >= 7;
-          }
-          return trend.category.toLowerCase() === categoryId;
-        })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-    });
-    
-    return trends;
+  const [trendsToShow, setTrendsToShow] = useState(3);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const scrollTargetRef = useRef<HTMLDivElement>(null);
+
+  // Pre-sort trends once
+  const sortedTrends = useMemo(() => {
+    return [...mockTrends].sort((a, b) => b.score - a.score);
   }, []);
+
+  const displayedTrends = useMemo(() => {
+    return sortedTrends.slice(0, trendsToShow);
+  }, [sortedTrends, trendsToShow]);
+
+  // Smooth scroll effect
+  useEffect(() => {
+    if (shouldScroll && scrollTargetRef.current) {
+      setTimeout(() => {
+        scrollTargetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setShouldScroll(false);
+      }, 50);
+    }
+  }, [shouldScroll]);
+
+  const handleExploreMore = () => {
+    setTrendsToShow((prev) => prev + 3);
+    setShouldScroll(true);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,9 +73,9 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.05, duration: 0.15 }}
                 whileHover={{ y: -4, scale: 1.02 }}
-                className="relative overflow-hidden rounded-xl border border-border bg-card p-6 md:p-8 cursor-pointer transition-all hover:border-primary hover:shadow-lg h-full"
+                className="relative overflow-hidden rounded-xl border border-border bg-card p-6 md:p-8 cursor-pointer transition-all duration-150 hover:border-primary hover:shadow-lg h-full"
               >
                 <div className="flex flex-col gap-4">
                   <div>
@@ -89,41 +95,34 @@ export default function Home() {
           ))}
         </motion.div>
 
-        {/* Top Trends by Category */}
-        {CATEGORIES.map((category, index) => (
-          <motion.div
-            key={`trends-${category.name}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="mb-12 md:mb-16"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Top Trends in {category.name}
-                </h2>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  {categoryTrends[category.name.toLowerCase()]?.length || 0} trends available
-                </p>
-              </div>
-              <Link href={`/trend/${category.name.toLowerCase()}`}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 md:px-6 py-2 md:py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium text-sm md:text-base"
-                >
-                  View All
-                </motion.button>
-              </Link>
+        {/* Top Trends */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 md:mb-16 trends-container"
+        >
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
+            Trending Now
+          </h2>
+          <TrendGrid 
+            trends={displayedTrends} 
+            categoryId="global"
+          />
+          
+          {trendsToShow < sortedTrends.length && (
+            <div ref={scrollTargetRef} className="flex justify-center mt-8 md:mt-12">
+              <motion.button
+                onClick={handleExploreMore}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="px-8 md:px-10 py-3 md:py-4 rounded-lg border-2 border-primary text-primary hover:bg-primary/10 transition-colors duration-150 font-semibold text-sm md:text-base"
+              >
+                Load More Trends
+              </motion.button>
             </div>
-            
-            <TrendGrid 
-              trends={categoryTrends[category.name.toLowerCase()] || []} 
-              categoryId={category.name.toLowerCase()}
-            />
-          </motion.div>
-        ))}
+          )}
+        </motion.div>
       </main>
     </div>
   );

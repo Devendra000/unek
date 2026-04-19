@@ -63,7 +63,8 @@ export function Navbar({ selectedCategory }: NavbarProps) {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`whitespace-nowrap rounded-full px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm font-semibold transition-all flex-shrink-0 ${
+                transition={{ duration: 0.12 }}
+                className={`whitespace-nowrap rounded-full px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm font-semibold transition-all duration-150 flex-shrink-0 ${
                   selectedCategory === category
                     ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                     : 'bg-muted text-muted-foreground hover:bg-muted hover:text-foreground'
