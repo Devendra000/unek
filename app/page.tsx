@@ -6,6 +6,7 @@ import { TrendGrid } from '@/components/trend-grid';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { mockTrends } from '@/lib/mock-data';
+import { fuzzySearch, fuzzySearchWithPositions } from '@/lib/fuzzy-search';
 
 const CATEGORIES = [
   { name: 'Global', description: 'Worldwide trending topics' },
@@ -21,6 +22,7 @@ export default function Home() {
   const [trendsToShow, setTrendsToShow] = useState(12);
   const [shouldScroll, setShouldScroll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMatches, setSearchMatches] = useState<{ [key: string]: { [key: string]: number[] } }>({});
   const scrollTargetRef = useRef<HTMLDivElement>(null);
 
   // Pre-sort trends once
@@ -31,13 +33,11 @@ export default function Home() {
   const displayedTrends = useMemo(() => {
     if (!searchQuery.trim()) return sortedTrends.slice(0, trendsToShow);
     
-    const query = searchQuery.toLowerCase();
-    const filtered = sortedTrends.filter(
-      (trend) =>
-        trend.title.toLowerCase().includes(query) ||
-        trend.summary.toLowerCase().includes(query) ||
-        trend.category.toLowerCase().includes(query)
-    );
+    const filtered = fuzzySearch(searchQuery, sortedTrends, [
+      'title',
+      'summary',
+      'category',
+    ]);
     return filtered.slice(0, trendsToShow);
   }, [sortedTrends, trendsToShow, searchQuery]);
 
@@ -61,7 +61,7 @@ export default function Home() {
       <Navbar 
         searchValue={searchQuery}
         onSearchChange={(value) => {
-          setSearchQuery(value);
+          setSearchQuery(value.trim());
           setTrendsToShow(12);
         }}
       />
