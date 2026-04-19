@@ -1,0 +1,212 @@
+// ============================================================
+// schema.prisma
+// Trending Topics + Authentic News Platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum SourceType {
+  NEWS_OUTLET      // e.g. Ekantipur, OnlineKhabar, BBC, Reuters
+  SOCIAL_PLATFORM  // e.g. Reddit, Google Trends, Twitter/X
+}
+
+enum ContentType {
+  NEWS
+  TREND
+}
+
+enum TrendSource {
+  REDDIT
+  GOOGLE_TRENDS
+  TWITTER_X
+}
+
+enum Language {
+  EN
+  NE   // Nepali
+  HI
+  OTHER
+}
+
+// ============================================================
+// LOOKUP / REFERENCE TABLES
+// ============================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique  // e.g. "Tech", "Finance", "Politics"
+  slug        String   @unique  // e.g. "tech", "finance"
+  description String?
+  createdAt   DateTime @default(now())
+
+  newsArticles    NewsArticle[]
+  trendingTopics  TrendingTopic[]
+}
+
+model Source {
+  id          String     @id @default(cuid())
+  name        String     @unique  // e.g. "Ekantipur", "Reddit"
+  slug        String     @unique  // e.g. "ekantipur", "reddit"
+  sourceType  SourceType
+  baseUrl     String
+  country     String?    // ISO 3166-1 alpha-2, e.g. "NP", "US"
+  logoUrl     String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  newsArticles    NewsArticle[]
+  trendingTopics  TrendingTopic[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  newsTags  NewsTag[]
+  trendTags TrendTag[]
+}
+
+// ============================================================
+// CORE CONTENT TABLES
+// ============================================================
+
+model NewsArticle {
+  id              String    @id @default(cuid())
+  title           String
+  summary         String
+  fullDescription String?   @db.Text
+  originalUrl     String    @unique
+  imageUrl        String?
+  author          String?
+  language        Language  @default(EN)
+  countryOfOrigin String?   // ISO 3166-1 alpha-2
+  isVerified      Boolean   @default(false)
+  publishedAt     DateTime
+  fetchedAt       DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  sourceId    String
+  source      Source   @relation(fields: [sourceId], references: [id])
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  tags      NewsTag[]
+  favorites Favorite[]
+
+  @@index([sourceId])
+  @@index([categoryId])
+  @@index([publishedAt])
+  @@index([language])
+}
+
+model TrendingTopic {
+  id              String      @id @default(cuid())
+  title           String
+  summary         String
+  fullDescription String?     @db.Text
+  link            String?
+  imageUrl        String?
+  score           Int         @default(0)  // upvotes, search volume, engagement count
+  memeability     Int?        // 1–10 scale
+  trendSource     TrendSource // REDDIT | GOOGLE_TRENDS | TWITTER_X
+  memeIdeas       String[]    // array of meme idea strings
+  platformData    Json?       // flexible JSONB for platform-specific metadata
+  fetchedAt       DateTime    @default(now())
+  expiresAt       DateTime?   // trends can be ephemeral
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  sourceId   String
+  source     Source   @relation(fields: [sourceId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  tags      TrendTag[]
+  favorites Favorite[]
+
+  @@index([sourceId])
+  @@index([categoryId])
+  @@index([score])
+  @@index([fetchedAt])
+  @@index([trendSource])
+}
+
+// ============================================================
+// JUNCTION TABLES (Tags)
+// ============================================================
+
+model NewsTag {
+  newsArticleId String
+  tagId         String
+  assignedAt    DateTime @default(now())
+
+  newsArticle NewsArticle @relation(fields: [newsArticleId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([newsArticleId, tagId])
+}
+
+model TrendTag {
+  trendingTopicId String
+  tagId           String
+  assignedAt      DateTime @default(now())
+
+  trendingTopic TrendingTopic @relation(fields: [trendingTopicId], references: [id], onDelete: Cascade)
+  tag           Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([trendingTopicId, tagId])
+}
+
+// ============================================================
+// USERS & ACTIVITY
+// ============================================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @updatedAt
+
+  favorites Favorite[]
+}
+
+model Favorite {
+  id          String      @id @default(cuid())
+  contentType ContentType // NEWS | TREND
+  createdAt   DateTime    @default(now())
+
+  // User relation
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Polymorphic: one of these will be set, the other null
+  newsArticleId   String?
+  trendingTopicId String?
+
+  newsArticle   NewsArticle?   @relation(fields: [newsArticleId], references: [id], onDelete: Cascade)
+  trendingTopic TrendingTopic? @relation(fields: [trendingTopicId], references: [id], onDelete: Cascade)
+
+  // A user can only favorite a piece of content once
+  @@unique([userId, newsArticleId])
+  @@unique([userId, trendingTopicId])
+
+  @@index([userId])
+  @@index([contentType])
+}
