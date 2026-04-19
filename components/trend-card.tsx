@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Trend } from '@/lib/mock-data';
 import Link from 'next/link';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 interface TrendCardProps {
   trend: Trend;
@@ -12,22 +13,49 @@ interface TrendCardProps {
   searchQuery?: string;
 }
 
-const highlightText = (text: string, query: string) => {
-  if (!query.trim()) return [text];
-  
-  const parts = text.split(new RegExp(`(${query})`, 'gi'));
-  return parts.filter(part => part);
-};
-
 const renderHighlightedText = (text: string, query: string) => {
   if (!query.trim()) return text;
   
-  const parts = highlightText(text, query);
-  return parts.map((part, i) => 
-    part.toLowerCase() === query.toLowerCase() ? 
-      <span key={i} className="bg-orange-400/60 dark:bg-orange-500/60 font-semibold">{part}</span> : 
-      <span key={i}>{part}</span>
-  );
+  const { positions } = fuzzyMatch(query, text);
+  if (positions.length === 0) return text;
+  
+  const posSet = new Set(positions);
+  const parts: React.ReactNode[] = [];
+  let highlightStart = -1;
+
+  for (let i = 0; i < text.length; i++) {
+    if (posSet.has(i)) {
+      if (highlightStart === -1) {
+        highlightStart = i;
+      }
+    } else {
+      if (highlightStart !== -1) {
+        parts.push(
+          <span 
+            key={`hl-${highlightStart}-${i}`} 
+            className="bg-orange-400/60 dark:bg-orange-500/60 font-semibold"
+          >
+            {text.substring(highlightStart, i)}
+          </span>
+        );
+        highlightStart = -1;
+      }
+      parts.push(text[i]);
+    }
+  }
+
+  if (highlightStart !== -1) {
+    parts.push(
+      <span 
+        key={`hl-${highlightStart}`} 
+        className="bg-orange-400/60 dark:bg-orange-500/60 font-semibold"
+      >
+        {text.substring(highlightStart)}
+      </span>
+    );
+  }
+
+  return parts;
 };
 
 const getCategoryColor = (category: string) => {
@@ -100,7 +128,7 @@ export function TrendCard({
               const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#f3f4f6;stop-opacity:1" /><stop offset="100%" style="stop-color:#e5e7eb;stop-opacity:1" /></linearGradient></defs><rect width="800" height="400" fill="url(#grad)"/><g opacity="0.3"><rect x="200" y="100" width="400" height="250" fill="none" stroke="#9ca3af" stroke-width="3" rx="10"/><circle cx="300" cy="170" r="25" fill="#d1d5db"/><path d="M200 320 L400 200 L600 300 L800 150 L800 350 Q800 360 790 360 L10 360 Q0 360 0 350 L0 100" fill="none" stroke="#d1d5db" stroke-width="2"/></g><g transform="translate(400, 200)"><circle cx="0" cy="0" r="50" fill="none" stroke="#9ca3af" stroke-width="3" opacity="0.4"/><circle cx="0" cy="0" r="40" fill="none" stroke="#9ca3af" stroke-width="2" opacity="0.3"/><path d="M -15 -5 L 15 20 M 15 -5 L -15 20" stroke="#9ca3af" stroke-width="3" stroke-linecap="round" opacity="0.5"/></g><text x="400" y="370" font-size="16" fill="#6b7280" text-anchor="middle" font-family="system-ui" font-weight="500">Image not available</text></svg>`;
               try {
                 const img = e.currentTarget as HTMLImageElement;
-                img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(fallbackSvg);
+                img.src = 'data:image/svg+xml;base64,' + btoa(fallbackSvg);
                 img.style.objectFit = 'contain';
                 img.style.padding = '20px';
                 img.style.background = '#f3f4f6';
@@ -108,7 +136,7 @@ export function TrendCard({
                 console.error('Failed to set fallback image:', error);
               }
             }}
-            loading="lazy"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent opacity-0 group-hover:opacity-40 transition-opacity" />
         </div>

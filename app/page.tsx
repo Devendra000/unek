@@ -24,6 +24,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMatches, setSearchMatches] = useState<{ [key: string]: { [key: string]: number[] } }>({});
   const scrollTargetRef = useRef<HTMLDivElement>(null);
+  const trendsContainerRef = useRef<HTMLDivElement>(null);
 
   // Pre-sort trends once
   const sortedTrends = useMemo(() => {
@@ -31,9 +32,10 @@ export default function Home() {
   }, []);
 
   const displayedTrends = useMemo(() => {
-    if (!searchQuery.trim()) return sortedTrends.slice(0, trendsToShow);
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return sortedTrends.slice(0, trendsToShow);
     
-    const filtered = fuzzySearch(searchQuery, sortedTrends, [
+    const filtered = fuzzySearch(trimmedQuery, sortedTrends, [
       'title',
       'summary',
       'category',
@@ -51,6 +53,15 @@ export default function Home() {
     }
   }, [shouldScroll]);
 
+  // Scroll to trends when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() && trendsContainerRef.current) {
+      setTimeout(() => {
+        trendsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [searchQuery]);
+
   const handleExploreMore = () => {
     setTrendsToShow((prev) => prev + 3);
     setShouldScroll(true);
@@ -61,7 +72,7 @@ export default function Home() {
       <Navbar 
         searchValue={searchQuery}
         onSearchChange={(value) => {
-          setSearchQuery(value.trim());
+          setSearchQuery(value);
           setTrendsToShow(12);
         }}
       />
@@ -113,14 +124,15 @@ export default function Home() {
 
         {/* Top Trends */}
         <motion.div
+          ref={trendsContainerRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-12 md:mb-16 trends-container"
         >
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
-            {searchQuery ? `Search Results for "${searchQuery}"` : 'Trending Now'}
+            {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Trending Now'}
           </h2>
-          {displayedTrends.length === 0 && searchQuery && (
+          {displayedTrends.length === 0 && searchQuery.trim() && (
             <div className="text-center py-12">
               <p className="text-muted-foreground text-lg">No trends found matching your search.</p>
             </div>

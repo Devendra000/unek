@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { use } from 'react';
 import { Navbar } from '@/components/navbar';
 import { TrendGrid } from '@/components/trend-grid';
 import { mockTrends } from '@/lib/mock-data';
+import { fuzzySearch } from '@/lib/fuzzy-search';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -28,27 +29,56 @@ interface CategoryPageProps {
 export default function CategoryPage({ params }: CategoryPageProps) {
   const { categoryId } = use(params);
   const categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const trendsGridRef = useRef<HTMLDivElement>(null);
 
   const filteredTrends = useMemo(() => {
-    return mockTrends.filter((trend) => {
+    let trends = mockTrends.filter((trend) => {
       if (categoryId === 'global') {
         return true;
-    }
+      }
       if (categoryId === 'memeable') {
         return trend.memeability >= 7;
       }
       return trend.category.toLowerCase() === categoryId;
     });
-  }, [categoryId]);
+
+    // Apply search filter if query exists
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      trends = fuzzySearch(trimmedQuery, trends, [
+        'title',
+        'summary',
+        'category',
+      ]);
+    }
+
+    return trends;
+  }, [categoryId, searchQuery]);
 
   const isValidCategory = CATEGORIES.some(
     (cat) => cat.toLowerCase() === categoryId,
   );
 
+  // Scroll to trends when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() && trendsGridRef.current) {
+      setTimeout(() => {
+        trendsGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [searchQuery]);
+
   if (!isValidCategory) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Navbar selectedCategory={categoryName} />
+        <Navbar 
+          selectedCategory={categoryName}
+          searchValue={searchQuery}
+          onSearchChange={(value) => {
+            setSearchQuery(value.trim());
+          }}
+        />
         <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
           <div className="flex flex-col items-center justify-center min-h-96 text-center">
             <div className="text-5xl mb-4">❌</div>
@@ -73,7 +103,13 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar selectedCategory={categoryName} />
+      <Navbar 
+        selectedCategory={categoryName}
+        searchValue={searchQuery}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+        }}
+      />
 
       <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
         <motion.div
@@ -86,14 +122,16 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             Back to Categories
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {categoryName} Trends
+            {searchQuery.trim() ? `Search Results in ${categoryName}` : `${categoryName} Trends`}
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Showing {filteredTrends.length} trend{filteredTrends.length !== 1 ? 's' : ''} in {categoryName}
           </p>
         </motion.div>
 
-        <TrendGrid trends={filteredTrends} categoryId={categoryId} />
+        <div ref={trendsGridRef}>
+          <TrendGrid trends={filteredTrends} categoryId={categoryId} searchQuery={searchQuery} />
+        </div>
       </main>
     </div>
   );
