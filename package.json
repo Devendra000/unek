@@ -74,6 +74,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",
+    "node-cron": "^3.0.3",
     "postcss": "^8.5",
     "prisma": "^7.0.0",
     "tailwindcss": "^4.2.0",
