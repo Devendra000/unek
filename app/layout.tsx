@@ -7,16 +7,16 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'unEK - Real-Time Trend Dashboard',
+  title: 'unEK - All the trends, one place',
   description: 'Discover trending topics from Reddit and Google Trends. Get instant meme ideas and stay ahead of viral moments.',
   icons: {
     icon: [
       {
-        url: '/logo.png',
+        url: '/logo.webp',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/logo.png',
+        url: '/logo.webp',
         media: '(prefers-color-scheme: dark)',
       },
       {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/logo.png',
+    apple: '/logo.webp',
   },
 }
 

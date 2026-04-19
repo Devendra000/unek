@@ -1,8 +1,9 @@
 'use client';
 
-import { Search, Flame } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface NavbarProps {
   selectedCategory?: string;
@@ -25,10 +26,19 @@ export function Navbar({ selectedCategory }: NavbarProps) {
         {/* Header row */}
         <div className="flex items-center gap-2 mb-3 md:gap-4 md:mb-3">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
-            <div className="rounded-lg bg-primary p-2">
-              <Flame className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-lg md:text-xl font-bold text-foreground">unEK</h1>
+            <Image
+              src="/logo-footer.webp"
+              alt="unEK"
+              width={40}
+              height={40}
+              className="h-10 w-auto"
+              priority
+              loading="eager"
+            />
+            <h1 className="text-lg md:text-xl font-bold text-foreground">
+              <span className="text-orange-600 dark:text-orange-400">un</span>
+              <span className="text-blue-600 dark:text-blue-400">EK</span>
+            </h1>
           </Link>
 
           <div className="flex-1 min-w-0">
