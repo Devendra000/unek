@@ -7,11 +7,13 @@ import { Trend } from '@/lib/mock-data';
 interface TrendGridProps {
   trends: Trend[];
   categoryId: string;
+  searchQuery?: string;
 }
 
 export function TrendGrid({
   trends,
   categoryId,
+  searchQuery = '',
 }: TrendGridProps) {
   if (trends.length === 0) {
     return (
@@ -55,6 +57,7 @@ export function TrendGrid({
             <TrendCard
               trend={trend}
               categoryId={categoryId}
+              searchQuery={searchQuery}
             />
           </motion.div>
         ))}

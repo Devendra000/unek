@@ -7,6 +7,8 @@ import Image from 'next/image';
 
 interface NavbarProps {
   selectedCategory?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const CATEGORIES = [
@@ -19,7 +21,7 @@ const CATEGORIES = [
   'Student',
 ];
 
-export function Navbar({ selectedCategory }: NavbarProps) {
+export function Navbar({ selectedCategory, searchValue = '', onSearchChange }: NavbarProps) {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-3">
@@ -35,7 +37,7 @@ export function Navbar({ selectedCategory }: NavbarProps) {
               priority
               loading="eager"
             />
-            <h1 className="text-lg md:text-xl font-bold text-foreground">
+            <h1 className="hidden md:block text-lg md:text-xl font-bold text-foreground">
               <span className="text-orange-600 dark:text-orange-400">un</span>
               <span className="text-blue-600 dark:text-blue-400">EK</span>
             </h1>
@@ -47,6 +49,8 @@ export function Navbar({ selectedCategory }: NavbarProps) {
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 className="w-full rounded-lg border border-border bg-card px-3 py-2 pl-9 text-sm md:text-base text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>

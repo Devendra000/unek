@@ -9,7 +9,26 @@ import Link from 'next/link';
 interface TrendCardProps {
   trend: Trend;
   categoryId: string;
+  searchQuery?: string;
 }
+
+const highlightText = (text: string, query: string) => {
+  if (!query.trim()) return [text];
+  
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return parts.filter(part => part);
+};
+
+const renderHighlightedText = (text: string, query: string) => {
+  if (!query.trim()) return text;
+  
+  const parts = highlightText(text, query);
+  return parts.map((part, i) => 
+    part.toLowerCase() === query.toLowerCase() ? 
+      <span key={i} className="bg-orange-400/60 dark:bg-orange-500/60 font-semibold">{part}</span> : 
+      <span key={i}>{part}</span>
+  );
+};
 
 const getCategoryColor = (category: string) => {
   const colors: { [key: string]: string } = {
@@ -31,6 +50,7 @@ const getTrendStatusIcon = (category: string) => {
 export function TrendCard({
   trend,
   categoryId,
+  searchQuery = '',
 }: TrendCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -121,12 +141,12 @@ export function TrendCard({
           </div>
 
           <h3 className="text-base md:text-lg font-bold text-foreground line-clamp-2 mb-3">
-            {trend.title}
+            {renderHighlightedText(trend.title, searchQuery)}
           </h3>
 
           <div className="mb-4">
             <p className="text-xs md:text-sm text-foreground/80 line-clamp-2">
-              {trend.summary}
+              {renderHighlightedText(trend.summary, searchQuery)}
             </p>
           </div>
 

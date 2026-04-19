@@ -20,6 +20,7 @@ const CATEGORIES = [
 export default function Home() {
   const [trendsToShow, setTrendsToShow] = useState(12);
   const [shouldScroll, setShouldScroll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollTargetRef = useRef<HTMLDivElement>(null);
 
   // Pre-sort trends once
@@ -28,8 +29,17 @@ export default function Home() {
   }, []);
 
   const displayedTrends = useMemo(() => {
-    return sortedTrends.slice(0, trendsToShow);
-  }, [sortedTrends, trendsToShow]);
+    if (!searchQuery.trim()) return sortedTrends.slice(0, trendsToShow);
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = sortedTrends.filter(
+      (trend) =>
+        trend.title.toLowerCase().includes(query) ||
+        trend.summary.toLowerCase().includes(query) ||
+        trend.category.toLowerCase().includes(query)
+    );
+    return filtered.slice(0, trendsToShow);
+  }, [sortedTrends, trendsToShow, searchQuery]);
 
   // Smooth scroll effect
   useEffect(() => {
@@ -48,7 +58,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      <Navbar 
+        searchValue={searchQuery}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setTrendsToShow(12);
+        }}
+      />
 
       <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
         <motion.div
@@ -102,14 +118,22 @@ export default function Home() {
           className="mb-12 md:mb-16 trends-container"
         >
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
-            Trending Now
+            {searchQuery ? `Search Results for "${searchQuery}"` : 'Trending Now'}
           </h2>
-          <TrendGrid 
-            trends={displayedTrends} 
-            categoryId="global"
-          />
+          {displayedTrends.length === 0 && searchQuery && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No trends found matching your search.</p>
+            </div>
+          )}
+          {displayedTrends.length > 0 && (
+            <TrendGrid 
+              trends={displayedTrends} 
+              categoryId="global"
+              searchQuery={searchQuery}
+            />
+          )}
           
-          {trendsToShow < sortedTrends.length && (
+          {trendsToShow < sortedTrends.length && displayedTrends.length > 0 && (
             <div ref={scrollTargetRef} className="flex justify-center mt-8 md:mt-12">
               <motion.button
                 onClick={handleExploreMore}
