@@ -1,10 +1,38 @@
 // Fuzzy search implementation similar to VS Code
 export function fuzzyMatch(query: string, text: string): { score: number; positions: number[] } {
-  const queryLower = query.toLowerCase();
+  const queryLower = query.toLowerCase().trim();
   const textLower = text.toLowerCase();
 
   if (!queryLower) return { score: 1, positions: [] };
-  if (!textLower.includes(queryLower.charAt(0))) return { score: 0, positions: [] };
+  
+  // Handle multi-word queries (word-order independent)
+  if (queryLower.includes(' ')) {
+    const words = queryLower.split(' ').filter(w => w.length > 0);
+    const allMatches: number[] = [];
+    let totalScore = 0;
+    
+    // Check if all words are found in text
+    for (const word of words) {
+      if (!textLower.includes(word.charAt(0))) return { score: 0, positions: [] };
+      
+      const wordMatch = fuzzyMatchSingleWord(word, textLower);
+      if (wordMatch.score === 0) return { score: 0, positions: [] };
+      
+      totalScore += wordMatch.score;
+      allMatches.push(...wordMatch.positions);
+    }
+    
+    // Sort positions for highlighting
+    allMatches.sort((a, b) => a - b);
+    return { score: totalScore / words.length, positions: allMatches };
+  }
+  
+  return fuzzyMatchSingleWord(queryLower, textLower);
+}
+
+function fuzzyMatchSingleWord(query: string, text: string): { score: number; positions: number[] } {
+  if (!query) return { score: 1, positions: [] };
+  if (!text.includes(query.charAt(0))) return { score: 0, positions: [] };
 
   let queryIdx = 0;
   let textIdx = 0;
@@ -12,26 +40,29 @@ export function fuzzyMatch(query: string, text: string): { score: number; positi
   let consecutiveMatches = 0;
   const positions: number[] = [];
 
-  while (queryIdx < queryLower.length && textIdx < textLower.length) {
-    if (queryLower[queryIdx] === textLower[textIdx]) {
+  while (queryIdx < query.length && textIdx < text.length) {
+    if (query[queryIdx] === text[textIdx]) {
       consecutiveMatches++;
       score += 10 + consecutiveMatches;
       positions.push(textIdx);
       queryIdx++;
     } else {
       consecutiveMatches = 0;
-      score -= 1;
+      score -= 0.5;  // Reduced penalty from 1 to 0.5
     }
     textIdx++;
   }
 
-  if (queryIdx !== queryLower.length) return { score: 0, positions: [] };
+  if (queryIdx !== query.length) return { score: 0, positions: [] };
 
-  score -= textIdx - queryLower.length;
+  score -= (textIdx - query.length) * 0.1;  // Reduced gap penalty
 
-  if (textLower.indexOf(queryLower.charAt(0)) === 0) {
+  if (text.indexOf(query.charAt(0)) === 0) {
     score += 20;
   }
+
+  // Bonus for finding all characters of the query
+  score += query.length * 2;
 
   return { score: Math.max(0, score), positions };
 }
