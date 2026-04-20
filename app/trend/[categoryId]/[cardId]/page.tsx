@@ -67,8 +67,12 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
     memeIdeas: [],
   } : null;
   
-  const categoryName =
-    categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
+  // Fetch category details
+  const categoryData = await prisma.category.findUnique({
+    where: { slug: categoryId },
+  });
+
+  const categoryName = categoryData?.name || 'Trend';
 
   if (!trend) {
     return (

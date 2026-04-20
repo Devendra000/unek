@@ -16,7 +16,7 @@ interface ClientSourcePageProps {
   sourceName: string;
   sources: { name: string; value: string }[];
   categories: string[];
-  initialTrends: (TrendingTopic & { category: { name: string } })[];
+  initialTrends: (TrendingTopic & { category: { name: string; slug: string } })[];
 }
 
 export default function ClientSourcePage({ 
@@ -26,7 +26,7 @@ export default function ClientSourcePage({
   categories,
   initialTrends 
 }: ClientSourcePageProps) {
-  const [displayedTrends, setDisplayedTrends] = useState<(TrendingTopic & { category: { name: string } })[]>(initialTrends);
+  const [displayedTrends, setDisplayedTrends] = useState<(TrendingTopic & { category: { name: string; slug: string } })[]>(initialTrends);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialTrends.length === 12);
 
@@ -54,7 +54,7 @@ export default function ClientSourcePage({
   }, [sourceId, displayedTrends.length]);
 
   // Convert TrendingTopic to Trend format for TrendCard
-  const formatTrend = (topic: TrendingTopic & { category: { name: string } }): Trend => ({
+  const formatTrend = (topic: TrendingTopic & { category: { name: string; slug: string } }): Trend => ({
     id: topic.id,
     title: topic.title,
     score: topic.score,
@@ -97,7 +97,7 @@ export default function ClientSourcePage({
                 <TrendCard 
                   key={trend.id} 
                   trend={formatTrend(trend)} 
-                  categoryId={trend.categoryId}
+                  categoryId={trend.category.slug}
                 />
               ))}
             </div>
