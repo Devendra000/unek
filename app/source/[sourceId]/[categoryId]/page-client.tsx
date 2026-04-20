@@ -16,21 +16,33 @@ interface Trend {
   summary: string;
   score: number;
   memeability: number;
-  imageUrl: string;
+  image: string;
   link: string;
   source: string;
   tags: string[];
 }
 
 interface ClientCategoryPageProps {
+  sourceId: string;
+  sourceName: string;
   sources: { name: string; value: string }[];
   categoryId: string;
   categoryName: string;
+  categories: string[];
   initialTrends: Trend[];
   hasMore: boolean;
 }
 
-export default function ClientCategoryPage({ sources, categoryId, categoryName, initialTrends, hasMore: initialHasMore }: ClientCategoryPageProps) {
+export default function ClientCategoryPage({ 
+  sourceId, 
+  sourceName,
+  sources,
+  categoryId, 
+  categoryName, 
+  categories,
+  initialTrends, 
+  hasMore: initialHasMore 
+}: ClientCategoryPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [displayedTrends, setDisplayedTrends] = useState(initialTrends);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -40,7 +52,6 @@ export default function ClientCategoryPage({ sources, categoryId, categoryName, 
   const filteredTrends = useMemo(() => {
     let trends = [...displayedTrends];
 
-    // Apply search filter if query exists
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery) {
       trends = fuzzySearch(trimmedQuery, trends, ['title', 'summary', 'category']);
@@ -49,7 +60,6 @@ export default function ClientCategoryPage({ sources, categoryId, categoryName, 
     return trends;
   }, [displayedTrends, searchQuery]);
 
-  // Scroll to trends when search query changes
   useEffect(() => {
     if (searchQuery.trim() && trendsGridRef.current) {
       setTimeout(() => {
@@ -62,7 +72,7 @@ export default function ClientCategoryPage({ sources, categoryId, categoryName, 
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/trends?category=${categoryId}&skip=${displayedTrends.length}&take=12`
+        `/api/trends?source=${sourceId}&category=${categoryId}&skip=${displayedTrends.length}&take=12`
       );
       const data = await response.json();
       
@@ -79,25 +89,26 @@ export default function ClientCategoryPage({ sources, categoryId, categoryName, 
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar
+      <Navbar 
         sources={sources}
+        selectedSource={sourceId}
+        selectedCategory={categoryName}
+        categories={categories}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value);
-        }}
+        onSearchChange={setSearchQuery}
       />
 
       <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 md:mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4 font-medium text-sm md:text-base">
+          <Link href={`/source/${sourceId}`} className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4 font-medium text-sm md:text-base">
             <ArrowLeft className="h-4 w-4" />
-            Back to Categories
+            Back to {sourceName}
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
             {searchQuery.trim() ? `Search Results in ${categoryName}` : `${categoryName} Trends`}
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Showing {filteredTrends.length} trend{filteredTrends.length !== 1 ? 's' : ''} in {categoryName}
+            Showing {filteredTrends.length} trend{filteredTrends.length !== 1 ? 's' : ''} from {sourceName}
           </p>
         </motion.div>
 

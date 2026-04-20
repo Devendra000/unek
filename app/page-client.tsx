@@ -15,23 +15,23 @@ interface Trend {
   summary: string;
   score: number;
   memeability: number;
-  imageUrl: string;
+  image: string;
   link: string;
   source: string;
   tags: string[];
 }
 
-interface Category {
+interface Source {
   name: string;
-  description: string;
+  value: string;
 }
 
 export default function ClientTrendPage({
   initialTrends,
-  categories,
+  sources,
 }: {
   initialTrends: Trend[];
-  categories: Category[];
+  sources: Source[];
 }) {
   const [trendsToShow, setTrendsToShow] = useState(12);
   const [shouldScroll, setShouldScroll] = useState(false);
@@ -78,6 +78,7 @@ export default function ClientTrendPage({
   return (
     <>
       <Navbar
+        sources={sources}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value);
@@ -87,15 +88,15 @@ export default function ClientTrendPage({
 
       <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Browse Trends by Category</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Browse Trends by Source</h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Select a category to explore trending topics and discover what&apos;s happening
+            Select a source to explore trending topics and discover what&apos;s happening
           </p>
         </motion.div>
 
-        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-16">
-          {categories.map((category, index) => (
-            <Link key={category.name} href={`/trend/${category.name.toLowerCase()}`}>
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">
+          {sources.map((source, index) => (
+            <Link key={source.value} href={`/source/${source.value}`}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -105,8 +106,8 @@ export default function ClientTrendPage({
               >
                 <div className="flex flex-col gap-4">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">{category.name}</h2>
-                    <p className="text-sm md:text-base text-foreground/80">{category.description}</p>
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">{source.name}</h2>
+                    <p className="text-sm md:text-base text-foreground/80">Browse trends from {source.name}</p>
                   </div>
                   <div className="text-xs md:text-sm text-primary font-semibold mt-auto">Explore →</div>
                 </div>

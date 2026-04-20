@@ -32,6 +32,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     );
   }
 
+  // Fetch all sources
+  const allDbSources = await prisma.source.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const sources = allDbSources.map((source) => ({
+    name: source.name,
+    value: source.slug,
+    sourceType: source.sourceType,
+  }));
+
   // Fetch category and trends from database
   let categoryRecord = null;
   type TrendWithRelations = TrendingTopic & {
@@ -104,5 +116,5 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     tags: trend.tags.map((t: TrendTag & { tag: Tag }) => t.tag.name),
   }));
 
-  return <ClientCategoryPage categoryId={categoryId} categoryName={categoryName} initialTrends={transformedTrends} hasMore={hasMore} />;
+  return <ClientCategoryPage sources={sources} categoryId={categoryId} categoryName={categoryName} initialTrends={transformedTrends} hasMore={hasMore} />;
 }

@@ -3,7 +3,7 @@
 import { Bookmark, BookmarkCheck, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Trend } from '@/lib/mock-data';
+import type { Trend } from '@/lib/types';
 import Link from 'next/link';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 

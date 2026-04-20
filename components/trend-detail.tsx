@@ -3,7 +3,7 @@
 import { ArrowLeft, Bookmark, BookmarkCheck, Zap, Lightbulb, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Trend } from '@/lib/mock-data';
+import type { Trend } from '@/lib/types';
 import Link from 'next/link';
 import { getImageFallbackUrl } from '@/components/image-fallback';
 

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TrendCard } from './trend-card';
-import { Trend } from '@/lib/mock-data';
+import type { Trend } from '@/lib/types';
 
 interface TrendGridProps {
   trends: Trend[];

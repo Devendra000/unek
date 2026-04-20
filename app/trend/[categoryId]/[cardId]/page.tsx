@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/navbar';
 import { TrendDetail } from '@/components/trend-detail';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getTrendById } from '@/lib/db';
@@ -14,6 +15,18 @@ interface CardDetailPageProps {
 
 export default async function CardDetailPage({ params }: CardDetailPageProps) {
   const { categoryId, cardId } = await params;
+  
+  // Fetch all sources
+  const allDbSources = await prisma.source.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+  });
+
+  const sources = allDbSources.map((source) => ({
+    name: source.name,
+    value: source.slug,
+    sourceType: source.sourceType,
+  }));
   
   // Fetch trend from database
   type TrendWithRelations = TrendingTopic & {
@@ -60,7 +73,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
   if (!trend) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Navbar selectedCategory={categoryName} />
+        <Navbar sources={sources} />
         <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
           <div className="flex flex-col items-center justify-center min-h-96 text-center">
             <div className="text-5xl mb-4">🔍</div>
@@ -85,7 +98,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar selectedCategory={categoryName} />
+      <Navbar sources={sources} />
 
       <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
         <TrendDetail trend={trend} categoryId={categoryId} />
