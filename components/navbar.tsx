@@ -39,7 +39,7 @@ export function Navbar({ selectedSource, selectedCategory, sources = [], categor
     : null;
   
   // Track expanded source type - only one can be open at a time
-  const [expandedSourceType, setExpandedSourceType] = useState<string | null>(selectedSourceType);
+  const [expandedSourceType, setExpandedSourceType] = useState<string | null>(selectedSourceType ?? null);
 
   // Keep expanded source type in sync with selected source (prevents navbar flicker on navigation)
   useEffect(() => {

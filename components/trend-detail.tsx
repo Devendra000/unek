@@ -155,20 +155,20 @@ export function TrendDetail({
             )}
             
             {/* Main content */}
-            <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-blue-500/5 via-background to-background border border-blue-500/20 hover:border-blue-500/40 transition-colors">
-              <p className="text-sm md:text-base text-foreground leading-relaxed whitespace-pre-wrap tracking-wide">
+            <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-blue-500/5 via-background to-background border border-blue-500/20 hover:border-blue-500/40 transition-colors overflow-hidden">
+              <p className="text-sm md:text-base text-foreground leading-relaxed break-words whitespace-pre-wrap tracking-wide">
                 {trend.fullDescription || trend.summary}
               </p>
             </div>
             
             {/* Summary */}
             {trend.summary && trend.fullDescription !== trend.summary && (
-              <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-primary/5 via-background to-background border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-primary/5 via-background to-background border border-primary/20 hover:border-primary/40 transition-colors overflow-hidden">
                 <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                  Quick Summary
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
+                  <span className="truncate">Quick Summary</span>
                 </h3>
-                <p className="text-sm md:text-base text-foreground/85 leading-relaxed">
+                <p className="text-sm md:text-base text-foreground/85 leading-relaxed break-words">
                   {trend.summary}
                 </p>
               </div>
