@@ -118,7 +118,7 @@ model TrendingTopic {
   title           String
   summary         String
   fullDescription String?     @db.Text
-  link            String?
+  link            String?     @unique
   imageUrl        String?
   score           Int         @default(0)  // upvotes, search volume, engagement count
   memeability     Int?        // 1–10 scale

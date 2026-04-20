@@ -1,12 +1,9 @@
-'use client';
-
-import { use } from 'react';
 import { Navbar } from '@/components/navbar';
 import { TrendDetail } from '@/components/trend-detail';
-import { mockTrends } from '@/lib/mock-data';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { getTrendById } from '@/lib/db';
+import type { TrendingTopic, Category, Source, TrendTag, Tag } from '@prisma/client';
 
 interface CardDetailPageProps {
   params: Promise<{
@@ -15,9 +12,48 @@ interface CardDetailPageProps {
   }>;
 }
 
-export default function CardDetailPage({ params }: CardDetailPageProps) {
-  const { categoryId, cardId } = use(params);
-  const trend = mockTrends.find((t) => t.id === cardId);
+export default async function CardDetailPage({ params }: CardDetailPageProps) {
+  const { categoryId, cardId } = await params;
+  
+  // Fetch trend from database
+  type TrendWithRelations = TrendingTopic & {
+    category: Category;
+    source: Source;
+    tags: (TrendTag & { tag: Tag })[];
+  };
+  
+  const dbTrend = await getTrendById(cardId) as TrendWithRelations | null;
+  
+  // Map source to valid Trend type
+  const mapSource = (sourceName: string): 'Reddit' | 'Google Trends' | 'Twitter/X' | 'News' => {
+    const sourceMap: Record<string, 'Reddit' | 'Google Trends' | 'Twitter/X' | 'News'> = {
+      'Reddit': 'Reddit',
+      'Google Trends': 'Google Trends',
+      'Twitter/X': 'Twitter/X',
+      'X': 'Twitter/X',
+      'News': 'News',
+    };
+    return sourceMap[sourceName] || 'News';
+  };
+
+  // Transform database trend to match UI format
+  const trend = dbTrend ? {
+    id: dbTrend.id,
+    title: dbTrend.title,
+    category: dbTrend.category.name,
+    categorySlug: dbTrend.category.slug,
+    summary: dbTrend.summary,
+    score: dbTrend.score,
+    memeability: dbTrend.memeability || 5,
+    image: dbTrend.imageUrl || 'https://picsum.photos/800/400?random=1',
+    link: dbTrend.link || '#',
+    source: mapSource(dbTrend.source.name),
+    tags: dbTrend.tags.map((t: TrendTag & { tag: Tag }) => t.tag.name),
+    fullDescription: dbTrend.fullDescription || dbTrend.summary,
+    timeAgo: 'recently',
+    memeIdeas: [],
+  } : null;
+  
   const categoryName =
     categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
 

@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowLeft, Bookmark, BookmarkCheck, Zap } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookmarkCheck, Zap, Lightbulb, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Trend } from '@/lib/mock-data';
 import Link from 'next/link';
+import { getImageFallbackUrl } from '@/components/image-fallback';
 
 interface TrendDetailProps {
   trend: Trend;
@@ -16,6 +17,7 @@ export function TrendDetail({
   categoryId,
 }: TrendDetailProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleN8nWebhook = () => {
     const payload = {
@@ -102,24 +104,75 @@ export function TrendDetail({
         </div>
 
         <div className="border-t border-border pt-4 md:pt-6 mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-foreground mb-3">Overview</h2>
-          <p className="text-sm md:text-base text-foreground/80 leading-relaxed">
-            {trend.fullDescription}
-          </p>
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg md:text-xl font-bold text-foreground">Key Insights</h2>
+          </div>
+          <ul className="space-y-3">
+            <li className="flex gap-3 items-start text-sm md:text-base text-foreground/80 p-3 md:p-4 rounded-lg bg-background border border-border hover:border-primary/50 transition-colors">
+              <span className="text-primary font-bold flex-shrink-0 mt-0.5">•</span>
+              <span>Gaining significant traction across social media platforms with active user engagement</span>
+            </li>
+            <li className="flex gap-3 items-start text-sm md:text-base text-foreground/80 p-3 md:p-4 rounded-lg bg-background border border-border hover:border-primary/50 transition-colors">
+              <span className="text-primary font-bold flex-shrink-0 mt-0.5">•</span>
+              <span>Strong momentum shows potential for continued growth in the coming hours</span>
+            </li>
+            <li className="flex gap-3 items-start text-sm md:text-base text-foreground/80 p-3 md:p-4 rounded-lg bg-background border border-border hover:border-primary/50 transition-colors">
+              <span className="text-primary font-bold flex-shrink-0 mt-0.5">•</span>
+              <span>More creators are actively engaging with and amplifying this topic</span>
+            </li>
+          </ul>
         </div>
 
         <div className="border-t border-border pt-4 md:pt-6 mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-foreground mb-4">Key Insights</h2>
-          <div className="space-y-2 md:space-y-3">
-            <p className="text-sm md:text-base text-foreground/80 p-3 md:p-4 rounded-lg bg-background border border-border">
-              This trend is gaining significant traction across social media
-              platforms. Users are actively discussing and sharing content related
-              to this topic.
-            </p>
-            <p className="text-sm md:text-base text-foreground/80 p-3 md:p-4 rounded-lg bg-background border border-border">
-              The momentum shows potential for continued growth in the coming hours
-              as more creators engage with the topic.
-            </p>
+          <div className="flex items-center gap-2 mb-5">
+            <FileText className="h-5 w-5 text-blue-500" />
+            <h2 className="text-lg md:text-xl font-bold text-foreground">Overview</h2>
+          </div>
+          <div className="space-y-4">
+            {/* Image */}
+            {trend.image && !imageError ? (
+              <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden border border-border/50 shadow-lg hover:shadow-xl transition-shadow bg-muted">
+                <img
+                  src={trend.image}
+                  alt={trend.title}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : null}
+            
+            {/* Fallback message if image fails */}
+            {imageError && (
+              <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden border border-border/50 shadow-lg bg-muted flex items-center justify-center">
+                <img
+                  src={getImageFallbackUrl()}
+                  alt="Image not available"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            
+            {/* Main content */}
+            <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-blue-500/5 via-background to-background border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+              <p className="text-sm md:text-base text-foreground leading-relaxed whitespace-pre-wrap tracking-wide">
+                {trend.fullDescription || trend.summary}
+              </p>
+            </div>
+            
+            {/* Summary */}
+            {trend.summary && trend.fullDescription !== trend.summary && (
+              <div className="p-5 md:p-6 rounded-xl bg-gradient-to-br from-primary/5 via-background to-background border border-primary/20 hover:border-primary/40 transition-colors">
+                <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Quick Summary
+                </h3>
+                <p className="text-sm md:text-base text-foreground/85 leading-relaxed">
+                  {trend.summary}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

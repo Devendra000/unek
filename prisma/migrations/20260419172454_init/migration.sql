@@ -167,6 +167,9 @@ CREATE INDEX "NewsArticle_publishedAt_idx" ON "NewsArticle"("publishedAt");
 CREATE INDEX "NewsArticle_language_idx" ON "NewsArticle"("language");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "TrendingTopic_link_key" ON "TrendingTopic"("link");
+
+-- CreateIndex
 CREATE INDEX "TrendingTopic_sourceId_idx" ON "TrendingTopic"("sourceId");
 
 -- CreateIndex

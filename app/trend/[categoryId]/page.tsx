@@ -1,24 +1,11 @@
-'use client';
+import { getCategories } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import ClientCategoryPage from './page-client';
+import type { TrendingTopic, Category, Source, TrendTag, Tag } from '@prisma/client';
 
-import { useMemo, useState, useRef, useEffect } from 'react';
-import { use } from 'react';
-import { Navbar } from '@/components/navbar';
-import { TrendGrid } from '@/components/trend-grid';
-import { mockTrends } from '@/lib/mock-data';
-import { fuzzySearch } from '@/lib/fuzzy-search';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+export const revalidate = 60;
 
-const CATEGORIES = [
-  'Global',
-  'Nepal',
-  'Hot',
-  'Memeable',
-  'Tech',
-  'Finance',
-  'Student',
-];
+const CATEGORIES = ['Global', 'Nepal', 'Hot', 'Memeable', 'Tech', 'Finance', 'Student'];
 
 interface CategoryPageProps {
   params: Promise<{
@@ -26,113 +13,96 @@ interface CategoryPageProps {
   }>;
 }
 
-export default function CategoryPage({ params }: CategoryPageProps) {
-  const { categoryId } = use(params);
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  const { categoryId } = await params;
   const categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const trendsGridRef = useRef<HTMLDivElement>(null);
-
-  const filteredTrends = useMemo(() => {
-    let trends = mockTrends.filter((trend) => {
-      if (categoryId === 'global') {
-        return true;
-      }
-      if (categoryId === 'memeable') {
-        return trend.memeability >= 7;
-      }
-      return trend.category.toLowerCase() === categoryId;
-    });
-
-    // Apply search filter if query exists
-    const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery) {
-      trends = fuzzySearch(trimmedQuery, trends, [
-        'title',
-        'summary',
-        'category',
-      ]);
-    }
-
-    return trends;
-  }, [categoryId, searchQuery]);
-
-  const isValidCategory = CATEGORIES.some(
-    (cat) => cat.toLowerCase() === categoryId,
-  );
-
-  // Scroll to trends when search query changes
-  useEffect(() => {
-    if (searchQuery.trim() && trendsGridRef.current) {
-      setTimeout(() => {
-        trendsGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-  }, [searchQuery]);
+  const isValidCategory = CATEGORIES.some((cat) => cat.toLowerCase() === categoryId);
 
   if (!isValidCategory) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Navbar 
-          selectedCategory={categoryName}
-          searchValue={searchQuery}
-          onSearchChange={(value) => {
-            setSearchQuery(value.trim());
-          }}
-        />
         <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
           <div className="flex flex-col items-center justify-center min-h-96 text-center">
             <div className="text-5xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              Category not found
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              The category "{categoryName}" does not exist.
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Category not found</h2>
+            <p className="text-muted-foreground mb-6">The category "{categoryName}" does not exist.</p>
           </div>
         </main>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar 
-        selectedCategory={categoryName}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value);
-        }}
-      />
+  // Fetch category and trends from database
+  let categoryRecord = null;
+  type TrendWithRelations = TrendingTopic & {
+    category: Category;
+    source: Source;
+    tags: (TrendTag & { tag: Tag })[];
+  };
+  let trends: TrendWithRelations[] = [];
 
-      <main className="container mx-auto px-3 py-4 md:px-4 md:py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 md:mb-8"
-        >
-          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-4 font-medium text-sm md:text-base">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Categories
-          </Link>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {searchQuery.trim() ? `Search Results in ${categoryName}` : `${categoryName} Trends`}
-          </h1>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Showing {filteredTrends.length} trend{filteredTrends.length !== 1 ? 's' : ''} in {categoryName}
-          </p>
-        </motion.div>
+  if (categoryId === 'global') {
+    // Global shows all trends
+    trends = await prisma.trendingTopic.findMany({
+      take: 13,
+      orderBy: { score: 'desc' },
+      include: {
+        category: true,
+        source: true,
+        tags: { include: { tag: true } },
+      },
+    });
+  } else if (categoryId === 'hot') {
+    // Hot shows the hottest trends across all categories
+    trends = await prisma.trendingTopic.findMany({
+      take: 13,
+      orderBy: [
+        { score: 'desc' },
+        { memeability: 'desc' },
+      ],
+      include: {
+        category: true,
+        source: true,
+        tags: { include: { tag: true } },
+      },
+    });
+  } else {
+    // Specific category
+    categoryRecord = await prisma.category.findUnique({
+      where: { slug: categoryId },
+    });
 
-        <div ref={trendsGridRef}>
-          <TrendGrid trends={filteredTrends} categoryId={categoryId} searchQuery={searchQuery} />
-        </div>
-      </main>
-    </div>
-  );
+    if (categoryRecord) {
+      trends = await prisma.trendingTopic.findMany({
+        where: { categoryId: categoryRecord.id },
+        take: 13,
+        orderBy: { score: 'desc' },
+        include: {
+          category: true,
+          source: true,
+          tags: { include: { tag: true } },
+        },
+      });
+    }
+  }
+
+  // Transform database trends to match UI format
+  const hasMore = trends.length > 12;
+  const displayTrends = trends.slice(0, 12);
+  
+  const transformedTrends = displayTrends.map((trend: TrendWithRelations) => ({
+    id: trend.id,
+    title: trend.title,
+    category: trend.category.name,
+    categorySlug: trend.category.slug,
+    summary: trend.summary,
+    score: trend.score,
+    memeability: trend.memeability || 5,
+    imageUrl: trend.imageUrl || 'https://picsum.photos/800/400?random=1',
+    link: trend.link || '#',
+    source: trend.source.name,
+    tags: trend.tags.map((t: TrendTag & { tag: Tag }) => t.tag.name),
+  }));
+
+  return <ClientCategoryPage categoryId={categoryId} categoryName={categoryName} initialTrends={transformedTrends} hasMore={hasMore} />;
 }
