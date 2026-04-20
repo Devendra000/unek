@@ -37,7 +37,11 @@ export default function ClientSourcePage({
       const data = await response.json();
       
       if (data.trends && data.trends.length > 0) {
-        setDisplayedTrends(prev => [...prev, ...data.trends]);
+        setDisplayedTrends(prev => {
+          const existingIds = new Set(prev.map(t => t.id));
+          const newTrends = data.trends.filter((t: any) => !existingIds.has(t.id));
+          return [...prev, ...newTrends];
+        });
         setHasMore(data.trends.length === 12);
       } else {
         setHasMore(false);
