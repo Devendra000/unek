@@ -1,10 +1,10 @@
 'use client';
 
-import { Search, ChevronDown } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface NavbarProps {
   selectedSource?: string;
@@ -40,6 +40,13 @@ export function Navbar({ selectedSource, selectedCategory, sources = [], categor
   
   // Track expanded source type - only one can be open at a time
   const [expandedSourceType, setExpandedSourceType] = useState<string | null>(selectedSourceType);
+
+  // Keep expanded source type in sync with selected source (prevents navbar flicker on navigation)
+  useEffect(() => {
+    if (selectedSourceType) {
+      setExpandedSourceType(selectedSourceType);
+    }
+  }, [selectedSourceType]);
 
   const toggleSourceType = (type: string) => {
     setExpandedSourceType(expandedSourceType === type ? null : type);
@@ -97,12 +104,6 @@ export function Navbar({ selectedSource, selectedCategory, sources = [], categor
                   {sourceType === 'SOCIAL_PLATFORM' && 'Social Platforms'}
                   {sourceType === 'NEWS_OUTLET' && 'News Outlets'}
                   {sourceType !== 'SOCIAL_PLATFORM' && sourceType !== 'NEWS_OUTLET' && sourceType}
-                  <motion.div
-                    animate={{ rotate: expandedSourceType === sourceType ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                  </motion.div>
                 </button>
               ))}
             </div>
