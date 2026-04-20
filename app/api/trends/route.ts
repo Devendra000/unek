@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
     const skip = parseInt(request.nextUrl.searchParams.get('skip') || '0');
     const take = parseInt(request.nextUrl.searchParams.get('take') || '12');
 
-    if (!source || !category) {
-      return NextResponse.json({ error: 'Source and category are required' }, { status: 400 });
+    if (!category) {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
     }
 
     type TrendWithRelations = TrendingTopic & {
@@ -19,25 +19,32 @@ export async function GET(request: NextRequest) {
       tags: (TrendTag & { tag: Tag })[];
     };
     
-    // Fetch source and category
-    const dbSource = await prisma.source.findUnique({
-      where: { slug: source },
-    });
+    // Build where clause
+    const where: { sourceId?: string; categoryId?: string } = {};
+
+    if (source) {
+      const dbSource = await prisma.source.findUnique({
+        where: { slug: source },
+      });
+      if (!dbSource) {
+        return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
+      }
+      where.sourceId = dbSource.id;
+    }
 
     const dbCategory = await prisma.category.findUnique({
       where: { slug: category },
     });
 
-    if (!dbSource || !dbCategory) {
-      return NextResponse.json({ error: 'Invalid source or category' }, { status: 400 });
+    if (!dbCategory) {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
     }
+
+    where.categoryId = dbCategory.id;
 
     // Fetch trends
     const trends: TrendWithRelations[] = await prisma.trendingTopic.findMany({
-      where: {
-        sourceId: dbSource.id,
-        categoryId: dbCategory.id,
-      },
+      where,
       skip,
       take: take + 1,
       orderBy: { score: 'desc' },
