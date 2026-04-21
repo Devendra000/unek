@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getScrapersStatus } from '@/src/scrapers';
 import { scrapeRedditTrends } from '@/src/scrapers/reddit/redditScraper';
+import { scrapeGoogleTrends } from '@/src/scrapers/google-trends/googleTrendsScraper';
 
 export async function GET() {
   try {
@@ -29,6 +30,14 @@ export async function POST(request: NextRequest) {
       const result = await scrapeRedditTrends();
       return NextResponse.json(
         { message: 'Reddit scrape completed', result },
+        { status: 200 }
+      );
+    }
+
+    if (action === 'scrape-google-trends') {
+      const result = await scrapeGoogleTrends();
+      return NextResponse.json(
+        { message: 'Google Trends scrape completed', result },
         { status: 200 }
       );
     }

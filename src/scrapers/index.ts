@@ -4,6 +4,7 @@
  */
 
 import { startRedditScraperJob, stopRedditScraperJob, getRedditJobStatus } from './reddit/redditJob';
+import { startGoogleTrendsScraperJob, stopGoogleTrendsScraperJob, getGoogleTrendsJobStatus } from './google-trends/googleTrendsJob';
 
 /**
  * Initialize all scrapers
@@ -16,9 +17,11 @@ export async function initializeScrapers() {
     // Start Reddit scraper
     await startRedditScraperJob();
 
+    // Start Google Trends scraper
+    await startGoogleTrendsScraperJob();
+
     // Add more scrapers here as needed
     // await startTwitterScraperJob();
-    // await startGoogleTrendsScraperJob();
 
     console.log('\n✅ All scrapers initialized\n');
     return true;
@@ -37,6 +40,7 @@ export async function shutdownScrapers() {
     console.log('\n🛑 Shutting down scrapers...\n');
 
     stopRedditScraperJob();
+    stopGoogleTrendsScraperJob();
     // Add more cleanup here as needed
 
     console.log('✅ All scrapers shut down\n');
@@ -51,6 +55,7 @@ export async function shutdownScrapers() {
 export function getScrapersStatus() {
   return {
     reddit: getRedditJobStatus(),
+    googleTrends: getGoogleTrendsJobStatus(),
     timestamp: new Date().toISOString(),
   };
 }
